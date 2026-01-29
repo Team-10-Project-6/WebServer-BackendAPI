@@ -144,6 +144,8 @@ def add_comment():
     return jsonify({"message": "Comment added"}), 201
 
 @app.route("/api/foobar", methods=["GET"])
+@require_auth
+
 def foobar():
     return jsonify({"message": "GET SUCCESSFUL", "blah" : ["this", "is", "explained"]})
 
