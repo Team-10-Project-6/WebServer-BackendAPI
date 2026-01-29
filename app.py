@@ -2,8 +2,10 @@ from flask import Flask, request, jsonify, session, Response
 import sqlite3
 import os
 import time
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 app.secret_key = "dev-secret"
 
 def get_db():
@@ -101,6 +103,10 @@ def add_comment():
     )
     db.commit()
     return jsonify({"message": "Comment added"}), 201
+
+@app.route("/api/foobar", methods=["GET"])
+def foobar():
+    return jsonify({"message": "GET SUCCESSFUL", "blah" : ["this", "is", "explained"]})
 
 # Database initialization
 if __name__ == "__main__":
