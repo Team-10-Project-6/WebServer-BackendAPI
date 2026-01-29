@@ -1,12 +1,50 @@
+import asyncio
+from functools import wraps
 from flask import Flask, request, jsonify, session, Response
 import sqlite3
 import os
 import time
 from flask_cors import CORS
+from dotenv import load_dotenv
+from auth0_api_python import ApiClient, ApiClientOptions
+from auth0_api_python.errors import BaseAuthError
+
+# Load environment variables from .env file
+load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
 app.secret_key = "dev-secret"
+
+# Initialize Auth0 API client (singleton - created once)
+api_client = ApiClient(ApiClientOptions(
+    domain=os.getenv("AUTH0_DOMAIN"),
+    audience=os.getenv("AUTH0_AUDIENCE")
+))
+
+# Authentication decorator
+def require_auth(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        auth_header = request.headers.get("Authorization", "")
+        
+        if not auth_header.startswith("Bearer "):
+            return jsonify({"error": "Missing or invalid authorization header"}), 401
+        
+        token = auth_header.split(" ")[1]
+        
+        try:
+            claims = asyncio.run(api_client.verify_access_token(token))
+            g.user_claims = claims
+            return f(*args, **kwargs)
+        except BaseAuthError as e:
+            return (
+                jsonify({"error": str(e)}),
+                e.get_status_code(),
+                e.get_headers()
+            )
+    
+    return decorated_function
 
 def get_db():
     conn = sqlite3.connect("database.db")
@@ -34,6 +72,7 @@ def login():
 
 # Post management with BLOB storage
 @app.route("/api/posts", methods=["GET", "POST"])
+@require_auth
 def manage_posts():
     db = get_db()
 
