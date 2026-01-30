@@ -1,6 +1,6 @@
 import asyncio
 from functools import wraps
-from flask import Flask, request, jsonify, session, Response
+from flask import Flask, request, jsonify, g, Response
 import sqlite3
 import os
 import time
@@ -14,7 +14,7 @@ load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
-app.secret_key = "dev-secret"
+app.secret_key = os.getenv("FLASK_SECRET_KEY", "dev-secret")
 
 # Initialize Auth0 API client (singleton - created once)
 api_client = ApiClient(ApiClientOptions(
@@ -51,24 +51,21 @@ def get_db():
     conn.row_factory = sqlite3.Row
     return conn
 
-# User authentication
-@app.route("/api/login", methods=["POST"])
-def login():
-    username = request.json.get("username", "").strip()
-    if not username:
-        return jsonify({"error": "Username is required"}), 400
-
+def get_or_create_user(auth0_sub):
+    """Get or create user based on Auth0 subject identifier"""
     db = get_db()
-    user = db.execute("SELECT id FROM users WHERE username = ?", (username,)).fetchone()
-
+    user = db.execute("SELECT id, username FROM users WHERE auth0_sub = ?", (auth0_sub,)).fetchone()
+    
     if user is None:
-        db.execute("INSERT INTO users (username) VALUES (?)", (username,))
+        # Extract email or username from claims if available
+        email = g.user_claims.get('email', f'user_{auth0_sub[:9]}')
+        print(f'[INFO] Creating new user with email: {email}')
+        print(email)
+        db.execute("INSERT INTO users (auth0_sub, username) VALUES (?, ?)", (auth0_sub, email))
         db.commit()
-        user = db.execute("SELECT id FROM users WHERE username = ?", (username,)).fetchone()
-
-    session["username"] = username
-    session["user_id"] = user["id"]
-    return jsonify({"message": "Login successful", "user_id": user["id"], "username": username})
+        user = db.execute("SELECT id, username FROM users WHERE auth0_sub = ?", (auth0_sub,)).fetchone()
+        
+    return user["id"]
 
 # Post management with BLOB storage
 @app.route("/api/posts", methods=["GET", "POST"])
@@ -77,8 +74,8 @@ def manage_posts():
     db = get_db()
 
     if request.method == "POST":
-        if "user_id" not in session:
-            return jsonify({"error": "Unauthorized"}), 401
+        # Get user_id from Auth0 claims instead of session
+        user_id = get_or_create_user(g.user_claims['sub'])
         
         file = request.files.get("image")
         description = request.form.get("description", "").strip()
@@ -91,7 +88,7 @@ def manage_posts():
 
         db.execute(
             "INSERT INTO images (user_id, name, description, data, uploaded_at) VALUES (?, ?, ?, ?, ?)",
-            (session.get("user_id"), file.filename, description, image_blob, int(time.time()))
+            (user_id, file.filename, description, image_blob, int(time.time()))
         )
         db.commit()
         return jsonify({"message": "Post created successfully with BLOB"}), 201
@@ -118,7 +115,7 @@ def manage_posts():
         })
     return jsonify(results)
 
-# Serve image BLOBs
+# Serve image BLOBs - can be public or protected depending on your needs
 @app.route("/api/images/download/<int:post_id>")
 def serve_blob(post_id):
     db = get_db()
@@ -130,27 +127,61 @@ def serve_blob(post_id):
 
 # Comment management
 @app.route("/api/comments", methods=["POST"])
+@require_auth
 def add_comment():
-    if "user_id" not in session:
-        return jsonify({"error": "Unauthorized"}), 401
+    # Get user_id from Auth0 claims instead of session
+    user_id = get_or_create_user(g.user_claims['sub'])
     
     data = request.json
     db = get_db()
     db.execute(
         "INSERT INTO comments (image_id, user_id, comment_text, created_at) VALUES (?, ?, ?, ?)",
-        (data['post_id'], session['user_id'], data['text'], int(time.time()))
+        (data['post_id'], user_id, data['text'], int(time.time()))
     )
     db.commit()
     return jsonify({"message": "Comment added"}), 201
 
 @app.route("/api/foobar", methods=["GET"])
+@require_auth
 def foobar():
-    return jsonify({"message": "GET SUCCESSFUL", "blah" : ["this", "is", "explained"]})
+    auth_header = request.headers.get("Authorization", "")
+    print(f"Auth header: {auth_header}")
+    print(f"Token segments: {len(auth_header.split('.'))}")
+    return jsonify({
+        "message": "GET SUCCESSFUL", 
+        "blah": ["this", "is", "explained"],
+        "user_info": {
+            "sub": g.user_claims.get('sub'),
+            "email": g.user_claims.get('email'),
+            "all_claims": g.user_claims
+        }
+    })
+
+# Optional: User info endpoint
+@app.route("/api/user/me", methods=["GET"])
+@require_auth
+def get_current_user():
+    user_id = get_or_create_user(g.user_claims['sub'])
+    db = get_db()
+    user = db.execute("SELECT id, username, auth0_sub FROM users WHERE id = ?", (user_id,)).fetchone()
+    return jsonify({
+        "id": user["id"],
+        "username": user["username"],
+        "auth0_sub": user["auth0_sub"],
+        "email": g.user_claims.get('email')
+    })
 
 # Database initialization
 if __name__ == "__main__":
     with get_db() as db:
-        db.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, username TEXT UNIQUE)")
+        # Update users table to include auth0_sub
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY, 
+                username TEXT UNIQUE,
+                auth0_sub TEXT UNIQUE
+            )
+        """)
         db.execute("""
             CREATE TABLE IF NOT EXISTS images (
                 id INTEGER PRIMARY KEY, user_id INTEGER, name TEXT, 
