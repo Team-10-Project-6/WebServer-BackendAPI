@@ -1,5 +1,5 @@
 import time
-from utils.db import get_db
+from app.db.db import get_db
 
 def create_post(user_id, filename, description, image_blob):
     db = get_db()

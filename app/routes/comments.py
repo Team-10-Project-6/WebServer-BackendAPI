@@ -1,8 +1,8 @@
 from flask import Blueprint, request, jsonify
-from middleware.auth import require_auth
 from flask import g
-from models.user import get_or_create_user
-from models.comment import create_comment
+from app.middleware.auth import require_auth
+from app.models.user import get_or_create_user
+from app.models.comment import create_comment
 
 bp = Blueprint('comments', __name__)
 

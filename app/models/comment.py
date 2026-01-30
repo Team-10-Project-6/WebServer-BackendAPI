@@ -1,5 +1,5 @@
 import time
-from utils.db import get_db
+from app.db.db import get_db
 
 def create_comment(image_id, user_id, comment_text):
     db = get_db()

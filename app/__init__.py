@@ -1,11 +1,9 @@
-import os
 from flask import Flask
 from flask_cors import CORS
 from config import config
-from utils.db import close_db, init_db
-from middleware.auth import init_auth
 
 def create_app(config_name='development'):
+    """Application factory"""
     app = Flask(__name__)
     app.config.from_object(config[config_name])
     
@@ -17,9 +15,11 @@ def create_app(config_name='development'):
          methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
     
     # Initialize Auth0
+    from app.middleware.auth import init_auth
     init_auth(app)
     
     # Register database teardown
+    from app.db.db import close_db
     app.teardown_appcontext(close_db)
     
     # Error handlers
@@ -34,24 +34,7 @@ def create_app(config_name='development'):
         return jsonify({"error": "Unauthorized"}), 401
     
     # Register blueprints
-    from routes import health, posts, comments
-    
-    app.register_blueprint(health.bp, url_prefix='/api')
-    app.register_blueprint(posts.bp, url_prefix='/api')
-    app.register_blueprint(comments.bp, url_prefix='/api')
+    from app.routes import register_routes
+    register_routes(app)
     
     return app
-
-if __name__ == "__main__":
-    app = create_app()
-    
-    # Initialize database
-    with app.app_context():
-        init_db()
-    
-    print("[INFO] Starting Flask server...")
-    print(f"[INFO] AUTH0_DOMAIN: {app.config['AUTH0_DOMAIN']}")
-    print(f"[INFO] AUTH0_AUDIENCE: {app.config['AUTH0_AUDIENCE']}")
-    
-    host = "0.0.0.0" if os.path.exists("/.dockerenv") else "127.0.0.1"
-    app.run(host=host, port=5000, debug=True)

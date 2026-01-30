@@ -1,5 +1,5 @@
 from flask import g
-from utils.db import get_db
+from app.db.db import get_db
 
 def get_or_create_user(auth0_sub):
     db = get_db()

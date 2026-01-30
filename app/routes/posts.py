@@ -1,9 +1,9 @@
 from flask import Blueprint, request, jsonify, Response
-from middleware.auth import require_auth
 from flask import g
-from models.user import get_or_create_user
-from models.post import create_post, get_all_posts, get_post_by_id
-from models.comment import get_comments_for_post
+from app.middleware.auth import require_auth
+from app.models.user import get_or_create_user
+from app.models.post import create_post, get_all_posts, get_post_by_id
+from app.models.comment import get_comments_for_post
 
 bp = Blueprint('posts', __name__)
 

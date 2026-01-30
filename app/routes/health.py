@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify
-from middleware.auth import require_auth
+from app.middleware.auth import require_auth
 from flask import g
 
 bp = Blueprint('health', __name__)
