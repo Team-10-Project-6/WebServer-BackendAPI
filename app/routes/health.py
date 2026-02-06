@@ -9,7 +9,6 @@ def health():
     return jsonify({"status": "ok", "message": "Server is running"})
 
 @bp.route('/foobar', methods=['GET'])
-@require_auth
 def foobar():
     try:
         return jsonify({

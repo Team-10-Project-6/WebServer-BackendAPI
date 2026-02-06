@@ -8,7 +8,7 @@ def get_or_create_user(auth0_sub):
     
     if user is None:
         # Get email from token claims
-        email = g.user_claims.get('email', f'user_{auth0_sub[:8]}')
+        email = g.user_claims.get('email')
         print(f'[INFO] Creating new user with email: {email}')
         
         db.execute("INSERT INTO users (auth0_sub, username) VALUES (?, ?)", (auth0_sub, email))
