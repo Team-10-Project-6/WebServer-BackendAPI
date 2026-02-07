@@ -12,7 +12,7 @@ def create_post(user_id, filename, description, image_blob):
 def get_all_posts():
     db = get_db()
     post_rows = db.execute("""
-        SELECT i.id, i.description, i.uploaded_at, u.username 
+        SELECT i.id, i.description, i.uploaded_at, u.username, i.data 
         FROM images i 
         JOIN users u ON i.user_id = u.id 
         ORDER BY i.uploaded_at DESC
