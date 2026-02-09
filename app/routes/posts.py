@@ -13,6 +13,7 @@ def list_posts():
     # GET: Retrieve all posts and comments
     posts = get_all_posts()
     results = []
+    
     for post in posts:
         comments = get_comments_for_post(post["id"])
         results.append({
@@ -23,7 +24,8 @@ def list_posts():
             "comments": [{"text": c["comment_text"], "author": c["username"]} for c in comments],
             "image_blob": base64.b64encode(post["data"]).decode('utf-8')  # Encode image blob as base64 string for frontend
         })
-        return jsonify(results)
+    
+    return jsonify(results)
 
 @bp.route('/posts', methods=['POST'])
 @require_auth
