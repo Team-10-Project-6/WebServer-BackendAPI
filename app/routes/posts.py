@@ -32,23 +32,22 @@ def list_posts():
 @require_auth
 def create_post():
     user_id = get_or_create_user(g.user_claims['sub'])
-    data = request.json
-    
-    if not data.get('image'):
-        return jsonify({"error": "No image data provided"}), 400
-    
-    # Decode base64 image
-    try:
-        image_blob = base64.b64decode(data['image'])
-    except Exception as e:
-        return jsonify({"error": "Invalid image data", "details": str(e)}), 400
-    
-    description = data.get("description", "").strip()
-    filename = data.get("filename", "image.jpg")
+
+    # Get file from multipart/form-data
+    file = request.files.get("image")
+    description = request.form.get("description", "").strip()
+
+    if not file:
+        return jsonify({"error": "No image file provided"}), 400
+
+    image_blob = file.read()
+    filename = file.filename or "image.jpg"
 
     print(f'[INFO] Creating post for user ID: {user_id} with filename: {filename} and description: "{description}"', flush=True)
+
+    # Add the post to DB
     add_post(user_id, filename, description, image_blob)
-    
+
     return jsonify({"message": "Post created successfully"}), 201
 
 @bp.route('/posts/<int:post_id>', methods=['PATCH'])
