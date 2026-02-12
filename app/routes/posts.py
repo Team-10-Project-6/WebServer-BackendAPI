@@ -9,7 +9,6 @@ import base64
 bp = Blueprint('posts', __name__)
 
 @bp.route('/posts', methods=['GET'])
-@require_auth
 def list_posts():
     # GET: Retrieve all posts and comments
     posts = get_all_posts()
