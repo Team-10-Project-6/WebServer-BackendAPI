@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify, Response
 from flask import g
 from app.middleware.auth import require_auth
 from app.models.user import get_or_create_user
-from app.models.post import create_post, get_all_posts, get_post_by_id
+from app.models.post import create_post, get_all_posts, get_post_by_id, delete_post
 from app.models.comment import get_comments_for_post
 
 bp = Blueprint('posts', __name__)
@@ -47,3 +47,13 @@ def serve_blob(post_id):
         return "Not Found", 404
     
     return Response(row["data"], mimetype='image/jpeg')
+
+# route to remove a post
+@bp.route('/posts/<int:post_id>', methods=['DELETE'])
+@require_auth
+def remove_post(post_id):
+    # obtains user id from auth token
+    user_id = get_or_create_user(g.user_claims['sub'])
+    if delete_post(post_id, user_id):
+        return jsonify({"message": "Post deleted successfully"}), 200
+    return jsonify({"error": "Post not found or unauthorized"}), 404

@@ -20,6 +20,12 @@ def get_all_posts():
     
     return post_rows
 
-def get_post_by_id(post_id):
+def get_post_by_id(post_id,):
     db = get_db()
     return db.execute("SELECT data, name FROM images WHERE id = ?", (post_id,)).fetchone()
+
+# deletes post if post exists and user id matches
+def delete_post(post_id, user_id):
+    db = get_db()
+    db.execute("DELETE FROM images WHERE id = ? AND user_id = ?", (post_id, user_id))
+    db.commit()
