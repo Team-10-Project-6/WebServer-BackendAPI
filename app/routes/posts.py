@@ -50,9 +50,9 @@ def create_post():
     return jsonify({"message": "Post created successfully"}), 201
 
 @bp.route('/posts/<int:post_id>', methods=['PATCH'])
-#@require_auth
+@require_auth
 def update_post(post_id):
-    #user_id = get_or_create_user(g.user_claims['sub'])
+    user_id = get_or_create_user(g.user_claims['sub'])
     data = request.json
 
     # Check if post exists and belongs to user
@@ -60,8 +60,8 @@ def update_post(post_id):
     if not post:
         return jsonify({"error": "Post not found"}), 404
     
-    # if post["user_id"] != user_id:
-    #     return jsonify({"error": "Unauthorized"}), 403
+    if post["user_id"] != user_id:
+        return jsonify({"error": "Unauthorized"}), 403
     
     updated_fields = []
 
