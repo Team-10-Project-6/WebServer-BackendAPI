@@ -23,3 +23,13 @@ def get_all_posts():
 def get_post_by_id(post_id):
     db = get_db()
     return db.execute("SELECT data, name FROM images WHERE id = ?", (post_id,)).fetchone()
+
+def update_post_image(post_id, image_blob):
+    db = get_db()
+    db.execute("UPDATE images SET data = ? WHERE id = ?", (image_blob, post_id))
+    db.commit()
+
+def update_post_description(post_id, description):
+    db = get_db()
+    db.execute("UPDATE images SET description = ? WHERE id = ?", (description, post_id))
+    db.commit()
