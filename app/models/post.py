@@ -26,12 +26,12 @@ def get_post_by_id(post_id,):
 
 def update_post_image(post_id, image_blob):
     db = get_db()
-    db.execute("UPDATE images SET data = ? WHERE id = ?", (image_blob, post_id))
+    db.execute("UPDATE images SET data = ?, updated_at = ? WHERE id = ?", (image_blob, int(time.time()), post_id))
     db.commit()
 
 def update_post_description(post_id, description):
     db = get_db()
-    db.execute("UPDATE images SET description = ? WHERE id = ?", (description, post_id))
+    db.execute("UPDATE images SET description = ?, updated_at = ? WHERE id = ?", (description, int(time.time()), post_id))
     db.commit()
 
 # deletes post if post exists and user id matches
