@@ -4,7 +4,9 @@ def register_routes(app):
     from app.routes.health import bp as health_bp
     from app.routes.posts import bp as posts_bp
     from app.routes.comments import bp as comments_bp
+    from app.routes.users import bp as users_bp
     
     app.register_blueprint(health_bp, url_prefix='/api')
     app.register_blueprint(posts_bp, url_prefix='/api')
     app.register_blueprint(comments_bp, url_prefix='/api')
+    app.register_blueprint(users_bp, url_prefix='/api')
