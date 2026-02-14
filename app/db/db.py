@@ -33,6 +33,7 @@ def init_db():
             name TEXT, 
             description TEXT, 
             data BLOB, 
+            mime_type TEXT,
             uploaded_at INTEGER, 
             updated_at INTEGER
         )
