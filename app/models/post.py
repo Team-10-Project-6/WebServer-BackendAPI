@@ -1,18 +1,18 @@
 import time
 from app.db.db import get_db
 
-def add_post(user_id, filename, description, image_blob, mime_type):
+def add_post(user_id, filename, description, base64_image, mime_type):
     db = get_db()
     db.execute(
-        "INSERT INTO images (user_id, name, description, data, mime_type, uploaded_at) VALUES (?, ?, ?, ?, ?, ?)",
-        (user_id, filename, description, image_blob, mime_type, int(time.time()))
+        "INSERT INTO images (user_id, name, description, base64_image, mime_type, uploaded_at) VALUES (?, ?, ?, ?, ?, ?)",
+        (user_id, filename, description, base64_image, mime_type, int(time.time()))
     )
     db.commit()
 
 def get_all_posts():
     db = get_db()
     post_rows = db.execute("""
-        SELECT i.id, i.description, i.uploaded_at, u.username, i.data, i.mime_type 
+        SELECT i.id, i.description, i.uploaded_at, u.username, i.base64_image, i.mime_type 
         FROM images i 
         JOIN users u ON i.user_id = u.id 
         ORDER BY i.uploaded_at DESC
@@ -22,11 +22,11 @@ def get_all_posts():
 
 def get_post_by_id(post_id,):
     db = get_db()
-    return db.execute("SELECT data, name, user_id, mime_type FROM images WHERE id = ?", (post_id,)).fetchone()
+    return db.execute("SELECT base64_image, name, user_id, mime_type FROM images WHERE id = ?", (post_id,)).fetchone()
 
 def update_post_image(post_id, image_blob, mime_type):
     db = get_db()
-    db.execute("UPDATE images SET data = ?, mime_type = ?, updated_at = ? WHERE id = ?", (image_blob, mime_type, int(time.time()), post_id))
+    db.execute("UPDATE images SET base64_image = ?, mime_type = ?, updated_at = ? WHERE id = ?", (image_blob, mime_type, int(time.time()), post_id))
     db.commit()
 
 def update_post_description(post_id, description):
