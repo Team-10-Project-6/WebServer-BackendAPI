@@ -35,7 +35,7 @@ def create_post():
     user_id = get_or_create_user(g.user_claims['sub'])
     data = request.json
     
-    base64_image = data['image']
+    base64_image = data.get('image')
     description = data.get("description", "").strip()
     mime_type = data.get("mime_type")
     
