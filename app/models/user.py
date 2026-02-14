@@ -27,3 +27,17 @@ def get_or_create_user(auth0_sub):
 def get_user_by_id(user_id):
     db = get_db()
     return db.execute("SELECT id, username, auth0_sub FROM users WHERE id = ?", (user_id,)).fetchone()
+
+# updates username for given user id
+def update_username(user_id, new_username):
+    db = get_db()
+    
+    # check if username exists
+    existing = db.execute("SELECT id FROM users WHERE username = ? AND id != ?", (new_username, user_id)).fetchone()
+    
+    if existing:
+        return False
+        
+    db.execute("UPDATE users SET username = ? WHERE id = ?", (new_username, user_id))
+    db.commit()
+    return True
