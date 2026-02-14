@@ -9,7 +9,6 @@ import base64
 bp = Blueprint('posts', __name__)
 
 @bp.route('/posts', methods=['GET'])
-@require_auth
 def list_posts():
     # GET: Retrieve all posts and comments
     posts = get_all_posts()
@@ -23,31 +22,35 @@ def list_posts():
             "username": post["username"],
             "uploaded_at": post["uploaded_at"],
             "comments": [{"text": c["comment_text"], "author": c["username"]} for c in comments],
-            "image_blob": base64.b64encode(post["data"]).decode('utf-8')  # Encode image blob as base64 string for frontend
+            "mime_type": post["mime_type"],
+            "base64_image": post["base64_image"]
         })
     
-    return jsonify(results)
+    return jsonify(results), 200
 
+# TO DO: Image validation?
 @bp.route('/posts', methods=['POST'])
 @require_auth
 def create_post():
     user_id = get_or_create_user(g.user_claims['sub'])
     data = request.json
     
-    if not data.get('image'):
-        return jsonify({"error": "No image data provided"}), 400
-    
-    # Decode base64 image
-    try:
-        image_blob = base64.b64decode(data['image'])
-    except Exception as e:
-        return jsonify({"error": "Invalid image data", "details": str(e)}), 400
-    
+    base64_image = data.get('image')
     description = data.get("description", "").strip()
+    mime_type = data.get("mime_type")
+    
+    if not base64_image or not description or not mime_type:
+        return jsonify({"error": "Missing image, description, or mime_type"}), 400
+    
+    # Validate filename
     filename = data.get("filename", "image.jpg")
-
+    if len(filename) > 255:
+        return jsonify({"error": "Filename too long"}), 400
+    
     print(f'[INFO] Creating post for user ID: {user_id} with filename: {filename} and description: "{description}"', flush=True)
-    add_post(user_id, filename, description, image_blob)
+    
+    # Store the base64 string directly in the database
+    add_post(user_id, filename, description, base64_image, mime_type)
     
     return jsonify({"message": "Post created successfully"}), 201
 
@@ -68,16 +71,23 @@ def update_post(post_id):
     updated_fields = []
 
     # Update post image if new image data is provided
-    if data.get("image"):
-        image_blob = base64.b64decode(data["image"])
-        update_post_image(post_id, image_blob)
+    if data.get("image"):        
+        mime_type = data.get('mime_type', "image/jpeg")
+
+        update_post_image(post_id, data["image"], mime_type)
         updated_fields.append("image")
 
     # Update post description if provided
-    if data.get("description"):
+    if data.get("description") is not None:
         new_description = data["description"].strip()
+        if not new_description:
+            return jsonify({"error": "Description cannot be empty"}), 400
+        
         update_post_description(post_id, new_description)
         updated_fields.append("description")
+
+    if not updated_fields:
+        return jsonify({"error": "No valid fields to update"}), 400
 
     return jsonify({"message": "Post updated successfully", "updated_fields": updated_fields}), 200
 
@@ -87,7 +97,7 @@ def serve_blob(post_id):
     if not row:
         return "Not Found", 404
     
-    return Response(row["data"], mimetype='image/jpeg')
+    return Response(base64.b64decode(row["base64_image"]), mimetype=row["mime_type"])
 
 # route to remove a post
 @bp.route('/posts/<int:post_id>', methods=['DELETE'])
