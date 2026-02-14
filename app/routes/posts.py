@@ -22,10 +22,11 @@ def list_posts():
             "username": post["username"],
             "uploaded_at": post["uploaded_at"],
             "comments": [{"text": c["comment_text"], "author": c["username"]} for c in comments],
+            "mime_type": post["mime_type"],
             "image_blob": base64.b64encode(post["data"]).decode('utf-8')  # Encode image blob as base64 string for frontend
         })
     
-    return jsonify(results)
+    return jsonify(results), 200
 
 @bp.route('/posts', methods=['POST'])
 @require_auth
@@ -44,9 +45,10 @@ def create_post():
     
     description = data.get("description", "").strip()
     filename = data.get("filename", "image.jpg")
+    mime_type = data.get('mime_type', "image/jpeg")
 
     print(f'[INFO] Creating post for user ID: {user_id} with filename: {filename} and description: "{description}"', flush=True)
-    add_post(user_id, filename, description, image_blob)
+    add_post(user_id, filename, description, image_blob, mime_type)
     
     return jsonify({"message": "Post created successfully"}), 201
 
@@ -69,7 +71,8 @@ def update_post(post_id):
     # Update post image if new image data is provided
     if data.get("image"):
         image_blob = base64.b64decode(data["image"])
-        update_post_image(post_id, image_blob)
+        mime_type = data.get('mime_type', "image/jpeg")
+        update_post_image(post_id, image_blob, mime_type)
         updated_fields.append("image")
 
     # Update post description if provided
@@ -86,7 +89,7 @@ def serve_blob(post_id):
     if not row:
         return "Not Found", 404
     
-    return Response(row["data"], mimetype='image/jpeg')
+    return Response(row["data"], mimetype=row["mime_type"])
 
 # route to remove a post
 @bp.route('/posts/<int:post_id>', methods=['DELETE'])
