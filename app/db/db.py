@@ -32,7 +32,7 @@ def init_db():
             user_id INTEGER, 
             name TEXT, 
             description TEXT, 
-            data BLOB, 
+            base64_image TEXT, 
             mime_type TEXT,
             uploaded_at INTEGER, 
             updated_at INTEGER
