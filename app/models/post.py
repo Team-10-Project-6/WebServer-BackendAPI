@@ -22,7 +22,7 @@ def get_all_posts():
 
 def get_post_by_id(post_id,):
     db = get_db()
-    return db.execute("SELECT base64_image, name, user_id, mime_type FROM images WHERE id = ?", (post_id,)).fetchone()
+    return db.execute("SELECT base64_image, name, description, user_id, mime_type, uploaded_at FROM images WHERE id = ?", (post_id,)).fetchone()
 
 def update_post_image(post_id, image_blob, mime_type):
     db = get_db()
