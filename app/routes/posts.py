@@ -21,7 +21,7 @@ def list_posts():
             "description": post["description"],
             "username": post["username"],
             "uploaded_at": post["uploaded_at"],
-            "comments": [{"text": c["comment_text"], "author": c["username"]} for c in comments],
+            "comments": len(comments),
             "mime_type": post["mime_type"],
             "base64_image": post["base64_image"]
         })
