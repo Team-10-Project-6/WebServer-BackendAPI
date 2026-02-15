@@ -91,13 +91,39 @@ def update_post(post_id):
 
     return jsonify({"message": "Post updated successfully", "updated_fields": updated_fields}), 200
 
-@bp.route('/images/download/<int:post_id>')
-def serve_blob(post_id):
+@bp.route('/posts/<int:post_id>', methods=['GET'])
+def get_post(post_id):
+    # Get a single post by ID
     row = get_post_by_id(post_id)
+
     if not row:
-        return "Not Found", 404
+        return jsonify({"error": "Post not found"}), 404
     
-    return Response(base64.b64decode(row["base64_image"]), mimetype=row["mime_type"])
+    post = {
+        "description": row["description"],
+        "username": row["name"],  
+        "uploaded_at": row["uploaded_at"],
+        "mime_type": row["mime_type"],
+        "base64_image": row["base64_image"]
+    }
+    
+    return jsonify(post), 200
+
+@bp.route('/posts/<int:post_id>/comments', methods=['GET'])
+def get_comments(post_id):
+    post = get_post_by_id(post_id)
+    if not post:
+        return jsonify({"error": "Post not found"}), 404
+
+    comments_row = get_comments_for_post(post_id)
+    comments = []
+    for c in comments_row:
+        comments.append({
+            "text": c["comment_text"],
+            "author": c["username"]
+        })
+
+    return jsonify(comments), 200
 
 # route to remove a post
 @bp.route('/posts/<int:post_id>', methods=['DELETE'])
@@ -117,3 +143,11 @@ def remove_post(post_id):
         return jsonify({"message": "Post deleted successfully"}), 200
     
     return jsonify({"error": "Post not found or unauthorized"}), 404
+
+@bp.route('/images/download/<int:post_id>')
+def serve_blob(post_id):
+    row = get_post_by_id(post_id)
+    if not row:
+        return "Not Found", 404
+    
+    return Response(base64.b64decode(row["base64_image"]), mimetype=row["mime_type"])
