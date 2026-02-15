@@ -12,6 +12,9 @@ def add_comment():
     user_id = get_or_create_user(g.user_claims['sub'])
     
     data = request.json
-    create_comment(data['post_id'], user_id, data['text'])
+    try:
+        create_comment(data['post_id'], user_id, data['text'])
+    except Exception as e:
+        print(f"[ERROR]: Cannot create comment: {e}")
     
     return jsonify({"message": "Comment added"}), 201
