@@ -109,22 +109,6 @@ def get_post(post_id):
     
     return jsonify(post), 200
 
-@bp.route('/posts/<int:post_id>/comments', methods=['GET'])
-def get_comments(post_id):
-    post = get_post_by_id(post_id)
-    if not post:
-        return jsonify({"error": "Post not found"}), 404
-
-    comments_row = get_comments_for_post(post_id)
-    comments = []
-    for c in comments_row:
-        comments.append({
-            "text": c["comment_text"],
-            "author": c["username"]
-        })
-
-    return jsonify(comments), 200
-
 # route to remove a post
 @bp.route('/posts/<int:post_id>', methods=['DELETE'])
 @require_auth
