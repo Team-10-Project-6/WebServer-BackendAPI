@@ -117,3 +117,30 @@ def remove_post(post_id):
         return jsonify({"message": "Post deleted successfully"}), 200
     
     return jsonify({"error": "Post not found or unauthorized"}), 404
+
+# Add this route to posts.py
+@bp.route('/posts/search', methods=['POST'])
+@require_auth
+def search_posts():
+    data = request.json
+    search_query = data.get('query', '').lower().strip()
+    
+    # Get all posts (or you could create a specific search function in your models)
+    all_posts = get_all_posts()
+    results = []
+    
+    for post in all_posts:
+        # Filter posts by description or username
+        if search_query in post["description"].lower() or search_query in post["username"].lower():
+            comments = get_comments_for_post(post["id"])
+            results.append({
+                "id": post["id"],
+                "description": post["description"],
+                "username": post["username"],
+                "uploaded_at": post["uploaded_at"],
+                "comments": [{"text": c["comment_text"], "author": c["username"]} for c in comments],
+                "mime_type": post["mime_type"],
+                "base64_image": post["base64_image"]
+            })
+    
+    return jsonify(results), 200
