@@ -74,6 +74,38 @@ def manage_posts():
     db = get_db()
 
     if request.method == "POST":
+
+        # 1. CHECK IF THIS IS A SEARCH (JSON)
+        if request.is_json:
+            data = request.get_json()
+            search_query = data.get("query", "").strip()
+            search_pattern = f"%{search_query}%"
+            
+            # Query filtered results
+            post_rows = db.execute("""
+                SELECT i.id, i.description, i.uploaded_at, u.username 
+                FROM images i JOIN users u ON i.user_id = u.id 
+                WHERE i.description LIKE ? OR u.username LIKE ?
+                ORDER BY i.uploaded_at DESC
+            """, (search_pattern, search_pattern)).fetchall()
+            
+            # Format results exactly like the GET request
+            results = []
+            for post in post_rows:
+                comment_rows = db.execute("""
+                    SELECT c.comment_text, u.username FROM comments c 
+                    JOIN users u ON c.user_id = u.id WHERE c.image_id = ?
+                """, (post["id"],)).fetchall()
+
+                results.append({
+                    "id": post["id"],
+                    "description": post["description"],
+                    "username": post["username"],
+                    "comments": [{"text": c["comment_text"], "author": c["username"]} for c in comment_rows]
+                })
+            return jsonify(results), 200
+
+
         # Get user_id from Auth0 claims instead of session
         user_id = get_or_create_user(g.user_claims['sub'])
         
@@ -156,6 +188,7 @@ def foobar():
             "all_claims": g.user_claims
         }
     })
+    
 
 # Optional: User info endpoint
 @app.route("/api/user/me", methods=["GET"])
