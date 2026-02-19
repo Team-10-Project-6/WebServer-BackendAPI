@@ -130,7 +130,6 @@ def remove_post(post_id):
 
 # Add this route to posts.py
 @bp.route('/posts/search', methods=['POST'])
-@require_auth
 def search_posts():
     data = request.json
     search_query = data.get('query', '').lower().strip()
