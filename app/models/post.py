@@ -20,6 +20,18 @@ def get_all_posts():
     
     return post_rows
 
+def get_posts_paginated(limit=20, offset=0):
+    db = get_db()
+    post_rows = db.execute("""
+        SELECT i.id, i.description, i.uploaded_at, u.username, i.base64_image, i.mime_type 
+        FROM images i 
+        JOIN users u ON i.user_id = u.id 
+        ORDER BY i.uploaded_at DESC
+        LIMIT ? OFFSET ?
+    """, (limit, offset)).fetchall()
+    
+    return post_rows
+
 def get_post_by_id(post_id,):
     db = get_db()
     return db.execute("SELECT base64_image, name, description, user_id, mime_type, uploaded_at FROM images WHERE id = ?", (post_id,)).fetchone()
