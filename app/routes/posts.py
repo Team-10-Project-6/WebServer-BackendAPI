@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify, Response
 from flask import g
 from app.middleware.auth import require_auth
 from app.models.user import get_or_create_user
-from app.models.post import add_post, get_all_posts, get_post_by_id, update_post_description, update_post_image, delete_post
+from app.models.post import add_post, get_all_posts, get_post_by_id, get_posts_paginated, update_post_description, update_post_image, delete_post
 from app.models.comment import get_comments_for_post
 import base64
 
@@ -10,8 +10,13 @@ bp = Blueprint('posts', __name__)
 
 @bp.route('/posts', methods=['GET'])
 def list_posts():
-    # GET: Retrieve all posts and comments
-    posts = get_all_posts()
+    # Get page from query params, default to 1
+    page = request.args.get('page', default=1, type=int)
+    limit = 20
+    if page < 1: page = 1
+    offset = (page - 1) * limit
+    posts = get_posts_paginated(limit=limit, offset=offset)
+    # posts = get_all_posts()
     results = []
     
     for post in posts:
@@ -147,7 +152,7 @@ def search_posts():
                 "description": post["description"],
                 "username": post["username"],
                 "uploaded_at": post["uploaded_at"],
-                "comments": [{"text": c["comment_text"], "author": c["username"]} for c in comments],
+                "comments": len(comments),
                 "mime_type": post["mime_type"],
                 "base64_image": post["base64_image"]
             })
