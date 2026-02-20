@@ -34,7 +34,11 @@ def get_posts_paginated(limit=20, offset=0):
 
 def get_post_by_id(post_id,):
     db = get_db()
-    return db.execute("SELECT base64_image, name, description, user_id, mime_type, uploaded_at FROM images WHERE id = ?", (post_id,)).fetchone()
+    return db.execute("""SELECT i.id, i.base64_image, i.name, i.description, i.user_id, i.mime_type, i.uploaded_at, u.username 
+                      FROM images i 
+                      JOIN users u ON i.user_id = u.id 
+                      WHERE i.id = ?
+                      """, (post_id,)).fetchone()
 
 def update_post_image(post_id, image_blob, mime_type):
     db = get_db()

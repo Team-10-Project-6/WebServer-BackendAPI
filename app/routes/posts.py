@@ -108,7 +108,8 @@ def get_post(post_id):
     post = {
         "id": post_id,
         "description": row["description"],
-        "username": row["name"],  
+        "username": row["username"], 
+        "image_name": row["name"],
         "uploaded_at": row["uploaded_at"],
         "mime_type": row["mime_type"],
         "comments": len(comments),
