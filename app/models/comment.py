@@ -17,3 +17,16 @@ def get_comments_for_post(post_id):
         JOIN users u ON c.user_id = u.id 
         WHERE c.image_id = ?
     """, (post_id,)).fetchall()
+
+def get_comments_for_post_paginated(post_id, limit=20, offset=0):
+    db = get_db()
+    comments = db.execute("""
+       SELECT c.comment_text, u.username 
+        FROM comments c 
+        JOIN users u ON c.user_id = u.id 
+        WHERE c.image_id = ?
+        ORDER BY c.created_at DESC
+        LIMIT ? OFFSET ?
+    """, (post_id, limit, offset)).fetchall()
+    
+    return comments
