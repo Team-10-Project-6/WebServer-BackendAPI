@@ -3,7 +3,7 @@ from flask import g
 from app.middleware.auth import require_auth
 from app.models.user import get_or_create_user
 from app.models.post import get_post_by_id
-from app.models.comment import create_comment, get_comments_for_post
+from app.models.comment import create_comment, get_comments_for_post, get_comments_for_post_paginated
 
 bp = Blueprint('comments', __name__)
 
@@ -35,11 +35,18 @@ def add_comment():
     
 @bp.route('/comments/<int:post_id>', methods=['GET'])
 def get_comments(post_id):
+    page = request.args.get('page', default=1, type=int)
+    limit = 30
+    if page < 1: page = 1
+
     post = get_post_by_id(post_id)
     if not post:
         return jsonify({"error": "Post not found"}), 404
 
-    comments_row = get_comments_for_post(post_id)
+    offset = (page - 1) * limit
+
+    # comments_row = get_comments_for_post(post_id)
+    comments_row = get_comments_for_post_paginated(post_id, limit=limit, offset=offset)
     comments = []
     for c in comments_row:
         comments.append({
