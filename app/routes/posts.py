@@ -104,11 +104,14 @@ def get_post(post_id):
     if not row:
         return jsonify({"error": "Post not found"}), 404
     
+    comments = get_comments_for_post(post_id)
     post = {
+        "id": post_id,
         "description": row["description"],
         "username": row["name"],  
         "uploaded_at": row["uploaded_at"],
         "mime_type": row["mime_type"],
+        "comments": len(comments),
         "base64_image": row["base64_image"]
     }
     
