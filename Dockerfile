@@ -13,5 +13,9 @@ COPY . .
 # Expose the port Flask runs on
 EXPOSE 5000
 
+COPY entrypoint.sh .
+RUN chmod +x entrypoint.sh
+CMD ["./entrypoint.sh"]
+
 # Run the application
-CMD ["gunicorn", "--worker-class", "gevent", "--workers", "2", "--worker-connections", "50", "--bind", "0.0.0.0:5000", "run:app"]
+# CMD ["gunicorn", "--worker-class", "gevent", "--workers", "2", "--worker-connections", "50", "--bind", "0.0.0.0:5000", "run:app"]
