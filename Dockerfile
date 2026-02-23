@@ -14,6 +14,7 @@ COPY . .
 EXPOSE 5000
 
 COPY entrypoint.sh .
+RUN apt-get update && apt-get install -y dos2unix && dos2unix entrypoint.sh
 RUN chmod +x entrypoint.sh
 CMD ["./entrypoint.sh"]
 
