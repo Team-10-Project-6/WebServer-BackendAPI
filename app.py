@@ -24,6 +24,12 @@ api_client = ApiClient(ApiClientOptions(
 
 # Authentication decorator
 def require_auth(f):
+    """
+    Decorator to enforce Auth0 JWT authentication.
+    
+    @param f The route function to run.
+    @return the decorated function.
+    """
     @wraps(f)
     def decorated_function(*args, **kwargs):
         auth_header = request.headers.get("Authorization", "")
@@ -47,6 +53,11 @@ def require_auth(f):
     return decorated_function
 
 def get_db():
+    """
+    Retrieves the SQLite database connection.
+    
+    @return The database connection.
+    """
     conn = sqlite3.connect("database.db")
     conn.row_factory = sqlite3.Row
     return conn
@@ -71,6 +82,12 @@ def get_or_create_user(auth0_sub):
 @app.route("/api/posts", methods=["GET", "POST"])
 @require_auth
 def manage_posts():
+    """
+    Endpoint: /api/posts
+
+    GET: Returns a paginated list of posts.
+    POST: Search (if JSON) or create a new post with a blob image (if Form data).
+    """
     db = get_db()
 
     if request.method == "POST":
@@ -150,6 +167,11 @@ def manage_posts():
 # Serve image BLOBs - can be public or protected depending on your needs
 @app.route("/api/images/download/<int:post_id>")
 def serve_blob(post_id):
+    """
+    Endpoint: GET /api/images/download/<post_id>
+    
+    Serves raw binary image data.
+    """
     db = get_db()
     row = db.execute("SELECT data, name FROM images WHERE id = ?", (post_id,)).fetchone()
     if not row:
@@ -161,6 +183,11 @@ def serve_blob(post_id):
 @app.route("/api/comments", methods=["POST"])
 @require_auth
 def add_comment():
+    """
+    Endpoint: POST /api/comments
+    
+    Add a comment to a specific post.
+    """
     # Get user_id from Auth0 claims instead of session
     user_id = get_or_create_user(g.user_claims['sub'])
     
@@ -176,6 +203,11 @@ def add_comment():
 @app.route("/api/foobar", methods=["GET"])
 @require_auth
 def foobar():
+    """
+    Endpoint: GET /api/foobar
+
+    Returns testing info and decoded user tokens.
+    """
     auth_header = request.headers.get("Authorization", "")
     print(f"Auth header: {auth_header}")
     print(f"Token segments: {len(auth_header.split('.'))}")
@@ -194,6 +226,11 @@ def foobar():
 @app.route("/api/user/me", methods=["GET"])
 @require_auth
 def get_current_user():
+    """
+    Endpoint: GET /api/user/me
+
+    Gets current user metadata.
+    """
     user_id = get_or_create_user(g.user_claims['sub'])
     db = get_db()
     user = db.execute("SELECT id, username, auth0_sub FROM users WHERE id = ?", (user_id,)).fetchone()

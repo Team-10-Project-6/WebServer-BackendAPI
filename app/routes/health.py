@@ -6,11 +6,25 @@ bp = Blueprint('health', __name__)
 
 @bp.route('/health', methods=['GET'])
 def health():
+    """
+    Endpoint: GET /health
+    
+    Health check endpoint to verify server status.
+    
+    @return JSON with status 'ok'.
+    """
     return jsonify({"status": "ok", "message": "Server is running"})
 
 @bp.route('/foobar', methods=['GET'])
 @require_auth
 def foobar():
+    """
+    Endpoint: GET /foobar
+    
+    Test endpoint requiring authentication. Returns the decoded user claims.
+    
+    @return JSON response with user information.
+    """
     try:
         return jsonify({
             "message": "GET SUCCESSFUL", 

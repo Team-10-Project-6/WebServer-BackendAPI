@@ -10,18 +10,25 @@ env_path = basedir / '.env'
 load_dotenv(env_path)
 
 class Config:
-    """Base configuration"""
+    """
+    Base configuration class with default settings.
+    Requires .env file to be present.
+    """
     SECRET_KEY = os.getenv("FLASK_SECRET_KEY", "dev-secret")
     AUTH0_DOMAIN = os.getenv("AUTH0_DOMAIN")
     AUTH0_AUDIENCE = os.getenv("AUTH0_AUDIENCE")
     DATABASE_PATH = "database.db"
 
 class DevelopmentConfig(Config):
-    """Development configuration"""
+    """
+    Development configuration enabling debugging features.
+    """
     DEBUG = True
     
 class ProductionConfig(Config):
-    """Production configuration"""
+    """
+    Production configuration with debug disabled for security.
+    """
     DEBUG = False
 
 config = {

@@ -7,6 +7,13 @@ bp = Blueprint('users', __name__)
 @bp.route('/user/username', methods=['PUT'])
 @require_auth
 def update_user_username():
+    """
+    Endpoint: PUT /user/username
+    
+    Updates the authenticated user's username.
+    
+    @return JSON response indicating success or conflict.
+    """
     # get user id from auth token
     print(f'[INFO] Received request to update username. User claims: {g.user_claims}', flush=True)
     user_id = get_or_create_user(g.user_claims['sub'])
@@ -31,6 +38,13 @@ def update_user_username():
 @bp.route('/user/me', methods=['GET'])
 @require_auth
 def get_username():
+    """
+    Endpoint: GET /user/me
+    
+    Retrieves the username of the currently authenticated user.
+    
+    @return JSON containing the username.
+    """
     try:
         user_id = get_or_create_user(g.user_claims['sub'])
     except Exception as e:

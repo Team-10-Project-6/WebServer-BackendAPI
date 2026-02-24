@@ -10,6 +10,14 @@ bp = Blueprint('comments', __name__)
 @bp.route('/comments', methods=['POST'])
 @require_auth
 def add_comment():
+    """
+    Endpoint: POST /comments
+    
+    Creates a new comment on a specific post.
+    Requires an authenticated user token.
+    
+    @return JSON response representing success or validation errors.
+    """
     data = request.json
     if not data:
         return jsonify({"error": "No data provided"}), 400
@@ -35,6 +43,14 @@ def add_comment():
     
 @bp.route('/comments/<int:post_id>', methods=['GET'])
 def get_comments(post_id):
+    """
+    Endpoint: GET /comments/<post_id>
+    
+    Retrieves a paginated list of comments for a specific post.
+    
+    @param post_id The ID of the post.
+    @return JSON list of comments with author names.
+    """
     page = request.args.get('page', default=1, type=int)
     limit = 30
     if page < 1: page = 1

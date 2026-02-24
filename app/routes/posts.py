@@ -10,6 +10,14 @@ bp = Blueprint('posts', __name__)
 
 @bp.route('/posts', methods=['GET'])
 def list_posts():
+    """
+    Endpoint: GET /posts
+    
+    Retrieves a paginated list of all posts, ordered by upload date descending.
+    Each post includes its corresponding comments and metadata.
+    
+    @return JSON array of post objects.
+    """
     # Get page from query params, default to 1
     page = request.args.get('page', default=1, type=int)
     limit = 20
@@ -36,6 +44,14 @@ def list_posts():
 @bp.route('/posts/me', methods=['GET'])
 @require_auth
 def list_user_posts():
+    """
+    Endpoint: GET /posts/me
+    
+    Retrieves a paginated list of posts created by the authenticated user.
+    Requires a valid JWT token.
+    
+    @return JSON array of the user's post objects.
+    """
     # Get page from query params, default to 1
     page = request.args.get('page', default=1, type=int)
     limit = 20
@@ -66,6 +82,14 @@ def list_user_posts():
 @bp.route('/posts', methods=['POST'])
 @require_auth
 def create_post():
+    """
+    Endpoint: POST /posts
+    
+    Creates a new post with image data and description.
+    Requires a valid JWT token.
+    
+    @return JSON indicating success or failure.
+    """
     user_id = get_or_create_user(g.user_claims['sub'])
     data = request.json
     
@@ -91,6 +115,15 @@ def create_post():
 @bp.route('/posts/<int:post_id>', methods=['PATCH'])
 @require_auth
 def update_post(post_id):
+    """
+    Endpoint: PATCH /posts/<post_id>
+    
+    Updates an existing post's image or description.
+    Users can only update their own posts.
+    
+    @param post_id The ID of the post to update.
+    @return JSON object with success message and updated fields list.
+    """
     user_id = get_or_create_user(g.user_claims['sub'])
     data = request.json
 
@@ -127,6 +160,14 @@ def update_post(post_id):
 
 @bp.route('/posts/<int:post_id>', methods=['GET'])
 def get_post(post_id):
+    """
+    Endpoint: GET /posts/<post_id>
+    
+    Retrieves detailed information for a specific post.
+    
+    @param post_id The ID of the post to view.
+    @return JSON object representing the post.
+    """
     # Get a single post by ID
     row = get_post_by_id(post_id)
 
@@ -151,6 +192,15 @@ def get_post(post_id):
 @bp.route('/posts/<int:post_id>', methods=['DELETE'])
 @require_auth
 def remove_post(post_id):
+    """
+    Endpoint: DELETE /posts/<post_id>
+    
+    Deletes a specific post. Users can only delete their own posts.
+    Requires a valid JWT token.
+    
+    @param post_id The ID of the post to delete.
+    @return JSON response indicating success or failure.
+    """
     # obtains user id from auth token
     user_id = get_or_create_user(g.user_claims['sub'])
     post = get_post_by_id(post_id)
@@ -169,6 +219,13 @@ def remove_post(post_id):
 # Add this route to posts.py
 @bp.route('/posts/search', methods=['POST'])
 def search_posts():
+    """
+    Endpoint: POST /posts/search
+    
+    Searches across all posts by comparing a query string to post descriptions and usernames.
+    
+    @return JSON list of matching posts.
+    """
     data = request.json
     search_query = data.get('query', '').lower().strip()
     
@@ -193,6 +250,14 @@ def search_posts():
     return jsonify(results), 200
 @bp.route('/images/download/<int:post_id>')
 def serve_blob(post_id):
+    """
+    Endpoint: GET /images/download/<post_id>
+    
+    Serves the raw base64-decoded image blob directly as a binary response for a given post.
+    
+    @param post_id The ID of the post containing the image.
+    @return A raw image response with the appropriate MIME type.
+    """
     row = get_post_by_id(post_id)
     if not row:
         return "Not Found", 404
