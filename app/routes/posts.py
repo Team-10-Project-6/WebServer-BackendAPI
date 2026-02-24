@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify, Response
 from flask import g
 from app.middleware.auth import require_auth
 from app.models.user import get_or_create_user
-from app.models.post import add_post, get_all_posts, get_post_by_id, get_posts_paginated, update_post_description, update_post_image, delete_post
+from app.models.post import add_post, get_all_posts, get_post_by_id, get_posts_by_user_paginated, get_posts_paginated, update_post_description, update_post_image, delete_post
 from app.models.comment import get_comments_for_post
 import base64
 
@@ -19,6 +19,35 @@ def list_posts():
     # posts = get_all_posts()
     results = []
     
+    for post in posts:
+        comments = get_comments_for_post(post["id"])
+        results.append({
+            "id": post["id"],
+            "description": post["description"],
+            "username": post["username"],
+            "uploaded_at": post["uploaded_at"],
+            "comments": len(comments),
+            "mime_type": post["mime_type"],
+            "base64_image": post["base64_image"]
+        })
+    
+    return jsonify(results), 200
+
+@bp.route('/posts/me', methods=['GET'])
+@require_auth
+def list_user_posts():
+    # Get page from query params, default to 1
+    page = request.args.get('page', default=1, type=int)
+    limit = 20
+    if page < 1: page = 1
+    offset = (page - 1) * limit
+    
+    user_id = get_or_create_user(g.user_claims['sub'])
+    
+    # Use a paginated query for the specific user
+    posts = get_posts_by_user_paginated(user_id, limit=limit, offset=offset) 
+    
+    results = []
     for post in posts:
         comments = get_comments_for_post(post["id"])
         results.append({

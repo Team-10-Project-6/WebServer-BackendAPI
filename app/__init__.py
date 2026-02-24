@@ -12,7 +12,7 @@ def create_app(config_name='development'):
          resources={r"/api/*": {"origins": "*"}},
          supports_credentials=True,
          allow_headers=["Content-Type", "Authorization"],
-         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
+         methods=["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"])
     
     # Initialize Auth0
     from app.middleware.auth import init_auth
