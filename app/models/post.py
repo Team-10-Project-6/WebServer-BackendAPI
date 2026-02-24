@@ -32,6 +32,20 @@ def get_posts_paginated(limit=20, offset=0):
     
     return post_rows
 
+def get_posts_by_user_paginated(user_id, limit, offset=0):
+    db = get_db()
+    post_rows = db.execute("""
+        SELECT i.id, i.description, i.uploaded_at, u.username, i.base64_image, i.mime_type
+        FROM images i
+        JOIN users u ON i.user_id = u.id
+        WHERE i.user_id = ?
+        GROUP BY i.id
+        ORDER BY i.uploaded_at DESC
+        LIMIT ? OFFSET ?
+    """, (user_id, limit, offset)).fetchall()
+    
+    return post_rows
+
 def get_post_by_id(post_id,):
     db = get_db()
     return db.execute("""SELECT i.id, i.base64_image, i.name, i.description, i.user_id, i.mime_type, i.uploaded_at, u.username 

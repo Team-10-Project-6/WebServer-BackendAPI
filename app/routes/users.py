@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, g
 from app.middleware.auth import require_auth
-from app.models.user import get_or_create_user, update_username
+from app.models.user import get_or_create_user, get_user_by_id, update_username
 
 bp = Blueprint('users', __name__)
 
@@ -27,3 +27,14 @@ def update_user_username():
         return jsonify({"message": "Username updated successfully", "username": new_username}), 200
     else:
         return jsonify({"error": "Username is already taken"}), 409
+    
+@bp.route('/user/me', methods=['GET'])
+@require_auth
+def get_username():
+    try:
+        user_id = get_or_create_user(g.user_claims['sub'])
+    except Exception as e:
+        return jsonify({"error":"Anon"})
+
+    user = get_user_by_id(user_id)
+    return jsonify({"username": user["username"]}), 200
