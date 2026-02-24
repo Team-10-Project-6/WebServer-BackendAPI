@@ -4,8 +4,14 @@ from flask import g
 def get_db():
     """Get database connection"""
     if 'db' not in g:
-        g.db = sqlite3.connect("database.db")
+        g.db = sqlite3.connect("database.db", check_same_thread=False)
         g.db.row_factory = sqlite3.Row
+        # WAL allows concurrent readers alongside one writer
+        g.db.execute("PRAGMA journal_mode = WAL")
+        # Retry for up to 3 s on a write collision instead of failing instantly.
+        g.db.execute("PRAGMA busy_timeout = 3000")
+        g.db.execute("PRAGMA synchronous = NORMAL")
+        g.db.execute("PRAGMA foreign_keys = ON")
     return g.db
 
 def close_db(e=None):
