@@ -1,8 +1,18 @@
 #!/bin/bash
 # entrypoint.sh
 
-# Run a quick python script to initialize the DB
+# Initialize DB
 python -c "from app.db.db import init_db; init_db()"
 
-# Then start Gunicorn
-exec gunicorn -w 2 -k gevent -b 0.0.0.0:5000 run:app
+# Calculate workers: 1 per core is usually safe for heavy CPU tasks like Base64 decoding
+# You can use 'nproc' to get CPU count
+WORKERS=${GUNICORN_WORKERS:-$(nproc)}
+
+echo "Starting Gunicorn with $WORKERS workers..."
+
+exec gunicorn \
+    --workers $WORKERS \
+    --worker-class gevent \
+    --worker-connections 1000 \
+    --bind 0.0.0.0:5000 \
+    run:app
