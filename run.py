@@ -1,4 +1,7 @@
-# run.py
+"""
+Main entry point for starting the Flask backend API.
+Initializes the database and starts the development server.
+"""
 import os
 from app import create_app
 from app.db.db import init_db

@@ -12,6 +12,13 @@ _jwks_cache = {"keys": None, "fetched_at": 0.0}
 _JWKS_TTL = 3600  # seconds — re-fetch once per hour
 
 def _get_jwks(domain):
+    """
+    Fetches the JSON Web Key Set (JWKS) from the Auth0 domain.
+    The keys are cached using a module-level dictionary until TTL expires.
+
+    @param domain The Auth0 domain URL.
+    @return The JWKS dictionary containing verification keys.
+    """
     now = _time.monotonic()
     if _jwks_cache["keys"] is None or (now - _jwks_cache["fetched_at"]) > _JWKS_TTL:
         print(f"[AUTH] Fetching JWKS from Auth0 for domain: {domain}", flush=True)
@@ -26,6 +33,14 @@ def _get_jwks(domain):
     return _jwks_cache["keys"]
 
 def _get_signing_key(domain, token):
+    """
+    Retrieves the RS256 signing key from Auth0 JWKS that matches the `kid` found in the token header.
+
+    @param domain The Auth0 domain URL.
+    @param token The extracted JWT.
+    @return The constructed JWK signing key.
+    @throws Exception if the matching kid cannot be found.
+    """
     jwks = _get_jwks(domain)
     unverified_header = jwt.get_unverified_header(token)
     kid = unverified_header.get("kid")
@@ -42,7 +57,11 @@ def _get_signing_key(domain, token):
     raise Exception(f"Unable to find signing key for kid: {kid!r}")
 
 def init_auth(app):
-    """Pre-warm the JWKS cache at worker startup."""
+    """
+    Pre-warms the JWKS cache at worker startup to reduce latency on the first request.
+
+    @param app The Flask application instance.
+    """
     try:
         _get_jwks(app.config["AUTH0_DOMAIN"])
         print("[AUTH] JWKS pre-warmed successfully", flush=True)
@@ -50,6 +69,14 @@ def init_auth(app):
         print(f"[AUTH] WARNING: Could not pre-fetch JWKS at startup: {e}", flush=True)
 
 def require_auth(f):
+    """
+    Decorator function to enforce JWT authentication and authorization on routes.
+    Extracts the Bearer token, validates it against Auth0 JWKS, and stores token
+    claims into Flask's global context (`g`).
+
+    @param f The endpoint route function.
+    @return The decorated endpoint.
+    """
     @wraps(f)
     def decorated_function(*args, **kwargs):
         auth_header = request.headers.get("Authorization", "")

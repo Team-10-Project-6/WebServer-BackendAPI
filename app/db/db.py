@@ -2,7 +2,12 @@ import sqlite3
 from flask import g
 
 def get_db():
-    """Get database connection"""
+    """
+    Retrieves the database connection for the current Flask context.
+    Configures SQLite pragmas for performance and concurrency (e.g. WAL).
+    
+    @return The active sqlite3 connection.
+    """
     if 'db' not in g:
         g.db = sqlite3.connect("database.db", check_same_thread=False)
         g.db.row_factory = sqlite3.Row
@@ -15,13 +20,20 @@ def get_db():
     return g.db
 
 def close_db(e=None):
-    """Close database connection"""
+    """
+    Closes the database connection if one exists in the current context.
+    
+    @param e Any exception that was raised during the request (optional).
+    """
     db = g.pop('db', None)
     if db is not None:
         db.close()
 
 def init_db():
-    """Initialize database tables"""
+    """
+    Initializes the database by creating all necessary tables (users, images, comments)
+    if they do not already exist.
+    """
     db = get_db()
     
     db.execute("""

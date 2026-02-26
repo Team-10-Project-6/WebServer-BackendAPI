@@ -2,6 +2,12 @@ from flask import g
 from app.db.db import get_db
 
 def get_or_create_user(auth0_sub):
+    """
+    Gets an existing user by their Auth0 subject ID, or creates a new user if one does not exist.
+
+    @param auth0_sub The Auth0 subject string (user ID).
+    @return The internal database ID of the user.
+    """
     db = get_db()
     
     user = db.execute("SELECT id, username FROM users WHERE auth0_sub = ?", (auth0_sub,)).fetchone()
@@ -25,11 +31,24 @@ def get_or_create_user(auth0_sub):
     return user["id"]
 
 def get_user_by_id(user_id):
+    """
+    Retrieves a user's details by their internal ID.
+
+    @param user_id The internal database ID of the user.
+    @return The user record.
+    """
     db = get_db()
     return db.execute("SELECT id, username, auth0_sub FROM users WHERE id = ?", (user_id,)).fetchone()
 
 # updates username for given user id
 def update_username(user_id, new_username):
+    """
+    Updates the username for a given user.
+
+    @param user_id The internal database ID of the user.
+    @param new_username The new username to assign.
+    @return True if successful, False if the username is already taken.
+    """
     db = get_db()
     
     # check if username exists
