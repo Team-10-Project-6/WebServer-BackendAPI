@@ -64,7 +64,7 @@ def init_db():
             user_id INTEGER, 
             comment_text TEXT, 
             created_at INTEGER,
-            FOREIGN KEY(image_id) REFERENCES images(id)
+            FOREIGN KEY(image_id) REFERENCES images(id) ON DELETE CASCADE
         )
     """)
     
