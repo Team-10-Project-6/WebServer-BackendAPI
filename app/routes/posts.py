@@ -2,8 +2,8 @@ from flask import Blueprint, request, jsonify, Response
 from flask import g
 from app.middleware.auth import require_auth
 from app.models.user import get_or_create_user
-from app.models.post import add_post, get_all_posts, get_post_by_id, get_posts_by_user_paginated, get_posts_paginated, update_post_description, update_post_image, delete_post
-from app.models.comment import get_comments_for_post
+from app.models.post import add_post, get_all_posts, get_post_by_id, get_posts_by_user_paginated, get_posts_paginated, search_posts_paginated, update_post_description, update_post_image, delete_post
+from app.models.comment import get_comments_count_for_post, get_comments_for_post
 import base64
 
 bp = Blueprint('posts', __name__)
@@ -28,13 +28,12 @@ def list_posts():
     results = []
     
     for post in posts:
-        comments = get_comments_for_post(post["id"])
         results.append({
             "id": post["id"],
             "description": post["description"],
             "username": post["username"],
             "uploaded_at": post["uploaded_at"],
-            "comments": len(comments),
+            "comments": post["comment_count"],
             "mime_type": post["mime_type"],
             "base64_image": post["base64_image"]
         })
@@ -65,13 +64,12 @@ def list_user_posts():
     
     results = []
     for post in posts:
-        comments = get_comments_for_post(post["id"])
         results.append({
             "id": post["id"],
             "description": post["description"],
             "username": post["username"],
             "uploaded_at": post["uploaded_at"],
-            "comments": len(comments),
+            "comments": post["comment_count"],
             "mime_type": post["mime_type"],
             "base64_image": post["base64_image"]
         })
@@ -174,20 +172,18 @@ def get_post(post_id):
     if not row:
         return jsonify({"error": "Post not found"}), 404
     
-    comments = get_comments_for_post(post_id)
-    post = {
+    count = get_comments_count_for_post(post_id)
+
+    return jsonify({
         "id": post_id,
         "description": row["description"],
         "username": row["username"], 
         "image_name": row["name"],
         "uploaded_at": row["uploaded_at"],
         "mime_type": row["mime_type"],
-        "comments": len(comments),
+        "comments": count,
         "base64_image": row["base64_image"]
-    }
-    
-    return jsonify(post), 200
-
+    }), 200
 # route to remove a post
 @bp.route('/posts/<int:post_id>', methods=['DELETE'])
 @require_auth
@@ -216,7 +212,6 @@ def remove_post(post_id):
     
     return jsonify({"error": "Post not found or unauthorized"}), 404
 
-# Add this route to posts.py
 @bp.route('/posts/search', methods=['POST'])
 def search_posts():
     """
@@ -228,25 +223,26 @@ def search_posts():
     """
     data = request.json
     search_query = data.get('query', '').lower().strip()
-    
-    # Get all posts (or you could create a specific search function in your models)
-    all_posts = get_all_posts()
+    page = int(data.get('page', 1))
+    limit = 20 
+    if page < 1: page = 1
+    offset = (page - 1) * limit
+
+    if not search_query:
+        return jsonify([]), 200
+
+    posts = search_posts_paginated(search_query, limit=limit, offset=offset)
     results = []
-    
-    for post in all_posts:
-        # Filter posts by description or username
-        if search_query in post["description"].lower() or search_query in post["username"].lower():
-            comments = get_comments_for_post(post["id"])
-            results.append({
-                "id": post["id"],
-                "description": post["description"],
-                "username": post["username"],
-                "uploaded_at": post["uploaded_at"],
-                "comments": len(comments),
-                "mime_type": post["mime_type"],
-                "base64_image": post["base64_image"]
-            })
-    
+    for post in posts:
+        results.append({
+            "id": post["id"],
+            "description": post["description"],
+            "username": post["username"],
+            "uploaded_at": post["uploaded_at"],
+            "comments": post["comment_count"],
+            "mime_type": post["mime_type"],
+            "base64_image": post["base64_image"]
+        })
     return jsonify(results), 200
 @bp.route('/images/download/<int:post_id>')
 def serve_blob(post_id):
