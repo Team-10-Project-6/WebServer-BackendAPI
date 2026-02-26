@@ -51,3 +51,8 @@ def get_comments_for_post_paginated(post_id, limit=20, offset=0):
     """, (post_id, limit, offset)).fetchall()
     
     return comments
+
+def get_comments_count_for_post(post_id):
+    db = get_db()
+    count = db.execute("SELECT COUNT(*) as count FROM comments WHERE image_id = ?", (post_id,)).fetchone()
+    return count["count"] if count else 0
